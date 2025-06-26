@@ -18,6 +18,9 @@ target/
 *.mtar
 mta_archives/
 
+#UI5 build folder 
+resources/
+
 # Other
 .DS_Store
 *.orig
