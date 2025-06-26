@@ -1,0 +1,40 @@
+{
+  "name": "sample-cds9",
+  "version": "1.0.0",
+  "description": "A simple CAP project.",
+  "repository": "<Add your repository here>",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@sap/cds": "^9.0.4",
+    "express": "^4",
+    "@cap-js/hana": "^2.1.1",
+    "@sap/xssec":"^4.8.0"
+  },
+  "engines": {
+    "node": "^22"
+  },
+  "devDependencies": {
+    "@cap-js/cds-types": "^0.11.0",
+    "@cap-js/sqlite": "^2.0.1",
+    "@sap/cds-dk": "^9.0.5",
+    "rimraf": "^6.0.1",
+    "mbt": "^1.2.34"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "watch-sample-cds9-feapp-one": "cds watch --open sample-cds9-feapp-one/webapp/index.html?sap-ui-xx-viewCache=false",
+    "undeploy": "cf undeploy sample-cds9 --delete-services --delete-service-keys --delete-service-brokers",
+    "build": "rimraf resources mta_archives && mbt build --mtar archive",
+    "deploy": "cf deploy mta_archives/archive.mtar --retries 1",
+    "watch-sample-cds9-uiapp-one": "cds watch --open sample-cds9-uiapp-one/webapp/index.html?sap-ui-xx-viewCache=false"
+  },
+  "cds": {
+    "sql": {
+      "native_hana_associations": false
+    }
+  },
+  "sapux": [
+    "app/sample-cds9-feapp-one"
+  ]
+}

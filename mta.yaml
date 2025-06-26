@@ -1,0 +1,150 @@
+_schema-version: 3.3.0
+ID: sample-cds9
+description: A simple CAP project.
+version: 1.0.0
+modules:
+- name: sample-cds9-srv
+  type: nodejs
+  path: gen/srv
+  requires:
+  - name: sample-cds9-db
+  - name: uaa_sample-cds9
+  provides:
+  - name: srv-api
+    properties:
+      srv-url: ${default-url}
+  parameters:
+    buildpack: nodejs_buildpack
+    instances: 1
+  build-parameters:
+    builder: npm-ci
+- name: sample-cds9-db-deployer
+  type: hdb
+  path: gen/db
+  requires:
+  - name: sample-cds9-db
+  parameters:
+    buildpack: nodejs_buildpack
+- name: sample-cds9-destination-content
+  type: com.sap.application.content
+  requires:
+  - name: sample-cds9-destination-service
+    parameters:
+      content-target: true
+  - name: sample-cds9_html_repo_host
+    parameters:
+      service-key:
+        name: sample-cds9_html_repo_host-key
+  - name: uaa_sample-cds9
+    parameters:
+      service-key:
+        name: uaa_sample-cds9-key
+  parameters:
+    content:
+      instance:
+        destinations:
+        - Name: sample_cds9_sample_cds9_html_repo_host
+          ServiceInstanceName: sample-cds9-html5-app-host-service
+          ServiceKeyName: sample-cds9_html_repo_host-key
+          sap.cloud.service: sample-cds9
+        - Authentication: OAuth2UserTokenExchange
+          Name: sample_cds9_uaa_sample_cds9
+          ServiceInstanceName: sample-cds9-xsuaa-service
+          ServiceKeyName: uaa_sample-cds9-key
+          sap.cloud.service: sample-cds9
+        existing_destinations_policy: update
+  build-parameters:
+    no-source: true
+- name: sample-cds9-app-content
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: sample-cds9_html_repo_host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - samplecds9feappone.zip
+      name: samplecds9feappone
+      target-path: resources/
+    - artifacts:
+      - comshellsamplecds9samplecds9uiappone.zip
+      name: comshellsamplecds9samplecds9uiappone
+      target-path: resources/
+- name: samplecds9feappone
+  type: html5
+  path: app/sample-cds9-feapp-one
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+- name: comshellsamplecds9samplecds9uiappone
+  type: html5
+  path: app/sample-cds9-uiapp-one
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+resources:
+- name: sample-cds9-db
+  type: com.sap.xs.hdi-container
+  parameters:
+    service: hana
+    service-plan: hdi-shared
+- name: sample-cds9-destination-service
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: true
+      init_data:
+        instance:
+          destinations:
+          - Authentication: NoAuthentication
+            HTML5.DynamicDestination: true
+            HTML5.ForwardAuthToken: true
+            Name: srv-api
+            ProxyType: Internet
+            Type: HTTP
+            URL: ~{srv-api/srv-url}
+          - Authentication: NoAuthentication
+            Name: ui5
+            ProxyType: Internet
+            Type: HTTP
+            URL: https://ui5.sap.com
+          existing_destinations_policy: update
+      version: 1.0.0
+    service: destination
+    service-name: sample-cds9-destination-service
+    service-plan: lite
+  requires:
+  - name: srv-api
+- name: sample-cds9_html_repo_host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: sample-cds9-html5-app-host-service
+    service-plan: app-host
+- name: uaa_sample-cds9
+  type: org.cloudfoundry.managed-service
+  parameters:
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: sample-cds9-xsuaa-service
+    service-plan: application
+parameters:
+  deploy_mode: html5-repo
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+  - builder: custom
+    commands:
+    - npm ci
+    - npx cds build --production
